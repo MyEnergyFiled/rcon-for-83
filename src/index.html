@@ -9,10 +9,17 @@
   <body>
     <div class="app-shell">
       <aside class="hero-panel">
-        <p class="eyebrow">83 RCON DESKTOP</p>
-        <h1>83 服务器 RCON 管理工具</h1>
+        <div class="hero-header">
+          <div>
+            <p class="eyebrow">83 RCON DESKTOP</p>
+            <h1>83 服务器 RCON 管理工具</h1>
+          </div>
+          <button id="theme-toggle-button" type="button" class="theme-toggle">
+            <span id="theme-toggle-label">夜间</span>
+          </button>
+        </div>
         <p class="hero-copy">
-          先把连接打稳，再逐步补上玩家管理与地图管理。当前版本专注于连接、断开、保存配置和状态日志。
+          当前版本已支持连接管理、玩家管理和地图管理首版。常用广播消息现在可以直接在左侧快速发送。
         </p>
 
         <div class="status-card" id="status-card" data-status="disconnected">
@@ -24,13 +31,47 @@
         </div>
 
         <div class="placeholder-group">
-          <h2>后续模块</h2>
+          <h2>当前功能</h2>
           <ul>
-            <li>服务器管理: 预留分组，暂未实现</li>
-            <li>玩家管理: 玩家列表、踢人、封禁等</li>
-            <li>地图管理: 地图列表、换图、地图池等</li>
+            <li>连接管理: 连接、断开、保存配置</li>
+            <li>消息广播: 全服 sendMessage</li>
+            <li>玩家管理: help、玩家列表、踢出并封禁、解除封禁、移除角色</li>
+            <li>地图管理: 列表查询、选择地图、选择地图池</li>
           </ul>
         </div>
+
+        <section class="broadcast-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">广播消息</p>
+              <h2>发送全服消息</h2>
+            </div>
+          </div>
+          <div class="stack-fields">
+            <label class="field">
+              <span>消息内容</span>
+              <textarea
+                id="broadcast-message-input"
+                rows="3"
+                placeholder="输入要广播给所有玩家的消息"
+              ></textarea>
+            </label>
+            <div class="button-row">
+              <button id="send-message-button" type="button" class="primary-button">发送消息</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="side-log-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">日志</p>
+              <h2>连接过程与命令返回</h2>
+            </div>
+            <button id="clear-log-button" type="button" class="ghost-button">清空日志</button>
+          </div>
+          <div id="log-list" class="log-list" aria-live="polite"></div>
+        </section>
       </aside>
 
       <main class="workspace">
@@ -45,12 +86,12 @@
           <form id="connection-form" class="connection-form">
             <label class="field">
               <span>服务器 IP</span>
-              <input id="host" name="host" type="text" placeholder="例如 5.83.173.248" />
+              <input id="host" name="host" type="text" placeholder="例如 31.214.143.212" />
             </label>
 
             <label class="field">
               <span>RCON 端口</span>
-              <input id="port" name="port" type="number" min="1" max="65535" placeholder="例如 10005" />
+              <input id="port" name="port" type="number" min="1" max="65535" placeholder="例如 10012" />
             </label>
 
             <label class="field field-full">
@@ -59,64 +100,167 @@
             </label>
 
             <div class="button-row field-full">
-              <button id="connect-button" type="submit" class="primary-button">
-                连接
-              </button>
-              <button id="disconnect-button" type="button" class="secondary-button">
-                断开
-              </button>
-              <button id="save-button" type="button" class="ghost-button">
-                保存配置
-              </button>
+              <button id="connect-button" type="submit" class="primary-button">连接</button>
+              <button id="disconnect-button" type="button" class="secondary-button">断开</button>
+              <button id="save-button" type="button" class="ghost-button">保存配置</button>
             </div>
           </form>
         </section>
 
-        <section class="grid-panels">
-          <section class="panel placeholder-panel">
-            <div class="panel-header">
-              <div>
-                <p class="panel-kicker">服务器管理</p>
-                <h2>暂未实现</h2>
-              </div>
-            </div>
-            <p>
-              这里将来可以接入 Nitrado 面板能力，例如启动、停止、重启和修改名称。目前首版只做 RCON 连接。
-            </p>
-          </section>
-
-          <section class="panel placeholder-panel">
+        <section class="grid-panels player-layout">
+          <section class="panel player-panel">
             <div class="panel-header">
               <div>
                 <p class="panel-kicker">玩家管理</p>
-                <h2>暂未实现</h2>
+                <h2>玩家列表与命令帮助</h2>
               </div>
             </div>
-            <p>下一阶段会加入玩家列表、踢出玩家、封禁/解封等功能。</p>
+
+            <div class="player-sections">
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>帮助与玩家列表</h3>
+                  <div class="button-row">
+                    <button id="help-button" type="button" class="ghost-button">查看 help</button>
+                    <button id="refresh-players-button" type="button" class="ghost-button">
+                      刷新玩家列表
+                    </button>
+                  </div>
+                </div>
+                <div class="stack-fields compact-fields">
+                  <label class="field">
+                    <span>help 命令名</span>
+                    <input
+                      id="help-command-input"
+                      type="text"
+                      placeholder="例如 kickPlayer / unbanPlayer / listBans"
+                    />
+                  </label>
+                </div>
+                <div id="players-output" class="command-output">
+                  连接后可获取玩家列表或查询 help。
+                </div>
+              </section>
+
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>玩家操作</h3>
+                </div>
+                <div class="stack-fields">
+                  <label class="field">
+                    <span>玩家 ID</span>
+                    <input id="kick-player-id" type="text" placeholder="输入玩家 ID" />
+                  </label>
+                  <label class="field">
+                    <span>踢出原因</span>
+                    <input id="kick-reason" type="text" placeholder="例如 Teamkilling" />
+                  </label>
+                  <div class="button-row">
+                    <button id="kick-player-button" type="button" class="danger-button">
+                      踢出并封禁
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>封禁与角色</h3>
+                </div>
+                <p class="hint-text">
+                  `kickPlayer` 会同时踢出并封禁玩家。如果你需要验证某个命令是否存在，可以在上方输入 `help 命令名` 直接查询。
+                </p>
+                <div class="stack-fields">
+                  <label class="field">
+                    <span>玩家 ID</span>
+                    <input id="manage-player-id" type="text" placeholder="输入玩家 ID" />
+                  </label>
+                  <div class="button-row">
+                    <button id="unban-player-button" type="button" class="secondary-button">
+                      解除封禁
+                    </button>
+                    <button id="remove-role-button" type="button" class="ghost-button">
+                      移除角色
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
           </section>
 
-          <section class="panel placeholder-panel">
+          <section class="panel map-panel">
             <div class="panel-header">
               <div>
                 <p class="panel-kicker">地图管理</p>
-                <h2>暂未实现</h2>
+                <h2>地图列表与切换</h2>
               </div>
             </div>
-            <p>下一阶段会加入地图列表、加载地图、下一张地图和设置地图池等功能。</p>
-          </section>
-        </section>
 
-        <section class="panel log-panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">日志</p>
-              <h2>连接过程与错误信息</h2>
+            <div class="player-sections">
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>地图与地图池</h3>
+                  <div class="button-row">
+                    <button id="list-maps-button" type="button" class="ghost-button">地图列表</button>
+                    <button id="list-rotations-button" type="button" class="ghost-button">
+                      地图池列表
+                    </button>
+                  </div>
+                </div>
+                <div id="maps-output" class="command-output">
+                  连接后可获取地图列表和地图池。
+                </div>
+              </section>
+
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>地图切换</h3>
+                </div>
+                <div class="stack-fields">
+                  <label class="field">
+                    <span>立即加载地图</span>
+                    <select id="load-map-select">
+                      <option value="">请先查询地图列表</option>
+                    </select>
+                  </label>
+                  <div class="button-row">
+                    <button id="load-map-button" type="button" class="danger-button">立即加载</button>
+                  </div>
+
+                  <label class="field">
+                    <span>下一张地图</span>
+                    <select id="next-map-select">
+                      <option value="">请先查询地图列表</option>
+                    </select>
+                  </label>
+                  <div class="button-row">
+                    <button id="next-map-button" type="button" class="secondary-button">
+                      设置下一张地图
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="player-block">
+                <div class="subheader">
+                  <h3>地图池</h3>
+                </div>
+                <div class="stack-fields">
+                  <label class="field">
+                    <span>地图池名称</span>
+                    <select id="rotation-name-select">
+                      <option value="">请先查询地图池列表</option>
+                    </select>
+                  </label>
+                  <div class="button-row">
+                    <button id="set-rotation-button" type="button" class="ghost-button">
+                      切换地图池
+                    </button>
+                  </div>
+                </div>
+              </section>
             </div>
-            <button id="clear-log-button" type="button" class="ghost-button">
-              清空日志
-            </button>
-          </div>
-          <div id="log-list" class="log-list" aria-live="polite"></div>
+          </section>
         </section>
       </main>
     </div>

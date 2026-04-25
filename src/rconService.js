@@ -5,11 +5,138 @@ const listeners = {
   state: new Set(),
 };
 
+const commandDefinitions = {
+  help: {
+    buildCommand: (payload) =>
+      payload.commandName ? `help ${payload.commandName}` : "help",
+    summary: (payload) =>
+      payload.commandName
+        ? `查询命令帮助 ${payload.commandName}`
+        : "获取帮助命令列表",
+  },
+  listPlayers: {
+    buildCommand: () => "listPlayers",
+    summary: () => "获取玩家列表",
+  },
+  kickPlayer: {
+    validate: (payload) => {
+      if (!payload.playerId) {
+        return "请填写玩家 ID。";
+      }
+      if (!payload.reason) {
+        return "请填写踢出原因。";
+      }
+      return null;
+    },
+    buildCommand: (payload) =>
+      `kickPlayer ${payload.playerId} "${payload.reason.replace(/"/g, '\\"')}"`,
+    summary: (payload) => `踢出并封禁玩家 ${payload.playerId}`,
+  },
+  unbanPlayer: {
+    validate: (payload) => {
+      if (!payload.playerId) {
+        return "请填写玩家 ID。";
+      }
+      return null;
+    },
+    buildCommand: (payload) => `unbanPlayer ${payload.playerId}`,
+    summary: (payload) => `解除封禁 ${payload.playerId}`,
+  },
+  removePlayerRole: {
+    validate: (payload) => {
+      if (!payload.playerId) {
+        return "请填写玩家 ID。";
+      }
+      return null;
+    },
+    buildCommand: (payload) => `removePlayerRole ${payload.playerId}`,
+    summary: (payload) => `移除玩家角色 ${payload.playerId}`,
+  },
+  sendMessage: {
+    validate: (payload) => {
+      if (!payload.messageText) {
+        return "请填写广播消息内容。";
+      }
+      return null;
+    },
+    buildCommand: (payload) =>
+      `sendMessage "${payload.messageText.replace(/"/g, '\\"')}"`,
+    summary: () => "发送全服广播消息",
+  },
+  listMaps: {
+    buildCommand: () => "listMaps",
+    summary: () => "获取地图列表",
+  },
+  loadMap: {
+    validate: (payload) => {
+      if (!payload.mapName) {
+        return "请填写地图名称。";
+      }
+      return null;
+    },
+    buildCommand: (payload) => `loadMap ${payload.mapName}`,
+    summary: (payload) => `立即加载地图 ${payload.mapName}`,
+  },
+  setNextMap: {
+    validate: (payload) => {
+      if (!payload.mapName) {
+        return "请填写地图名称。";
+      }
+      return null;
+    },
+    buildCommand: (payload) => `setNextMap ${payload.mapName}`,
+    summary: (payload) => `设置下一张地图 ${payload.mapName}`,
+  },
+  listMapRotations: {
+    buildCommand: () => "listMapRotations",
+    summary: () => "获取地图池列表",
+  },
+  setMapRotation: {
+    validate: (payload) => {
+      if (!payload.rotationName) {
+        return "请填写地图池名称。";
+      }
+      return null;
+    },
+    buildCommand: (payload) => `setMapRotation ${payload.rotationName}`,
+    summary: (payload) => `切换地图池 ${payload.rotationName}`,
+  },
+};
+
 let client = null;
 let connectionState = {
   status: "disconnected",
   message: "未连接",
 };
+
+function formatErrorDetails(error) {
+  if (!error) {
+    return "无错误对象";
+  }
+
+  const parts = [];
+  if (error.name) {
+    parts.push(`name=${error.name}`);
+  }
+  if (error.code) {
+    parts.push(`code=${error.code}`);
+  }
+  if (error.errno) {
+    parts.push(`errno=${error.errno}`);
+  }
+  if (error.syscall) {
+    parts.push(`syscall=${error.syscall}`);
+  }
+  if (error.message) {
+    parts.push(`message=${error.message}`);
+  }
+
+  return parts.join(", ") || String(error);
+}
+
+function describeConfig(config) {
+  return `host=${config.host}, port=${config.port}, passwordLength=${config.password.length}`;
+}
 
 function normalizeConfig(config = {}) {
   const rawHost = String(config.host || "").trim();
@@ -121,6 +248,11 @@ function mapConnectionError(error) {
   return `连接失败: ${message}`;
 }
 
+function mapCommandError(error) {
+  const message = error?.message || "未知错误";
+  return `命令执行失败: ${message}`;
+}
+
 async function disconnect() {
   if (!client) {
     emitState({
@@ -168,30 +300,45 @@ async function connect(config) {
     "info",
     `正在连接 ${normalizedConfig.host}:${Number(normalizedConfig.port)} ...`,
   );
+  emitLog("info", `调试: 连接参数 ${describeConfig(normalizedConfig)}`);
 
   try {
-    client = await Rcon.connect({
+    const nextClient = new Rcon({
       host: normalizedConfig.host,
       port: Number(normalizedConfig.port),
       password: normalizedConfig.password,
+      timeout: 5000,
     });
 
-    client.on("end", () => {
+    nextClient.on("connect", () => {
+      emitLog("info", "调试: TCP 连接已建立，等待 RCON 认证。");
+    });
+
+    nextClient.on("authenticated", () => {
+      emitLog("info", "调试: RCON 认证通过。");
+    });
+
+    nextClient.on("end", () => {
       client = null;
       emitState({
         status: "disconnected",
         message: "未连接",
       });
       emitLog("warning", "RCON 连接已关闭。");
+      emitLog("warning", "调试: 收到 end 事件，连接被本地或服务端关闭。");
     });
 
-    client.on("error", (error) => {
+    nextClient.on("error", (error) => {
       emitLog("error", `连接出现异常: ${mapConnectionError(error)}`);
+      emitLog("error", `调试: 底层错误详情: ${formatErrorDetails(error)}`);
       emitState({
         status: "error",
         message: "连接异常",
       });
     });
+
+    await nextClient.connect();
+    client = nextClient;
 
     emitState({
       status: "connected",
@@ -209,7 +356,55 @@ async function connect(config) {
       message: "连接失败",
     });
     emitLog("error", friendlyError);
+    emitLog("error", `调试: 连接失败原始详情: ${formatErrorDetails(error)}`);
 
+    return { ok: false, error: friendlyError };
+  }
+}
+
+async function runCommand(commandKey, payload = {}) {
+  if (!client) {
+    const error = "请先连接 RCON 服务器。";
+    emitLog("error", error);
+    return { ok: false, error };
+  }
+
+  const definition = commandDefinitions[commandKey];
+  if (!definition) {
+    const error = `暂不支持的命令: ${commandKey}`;
+    emitLog("error", error);
+    return { ok: false, error };
+  }
+
+  const normalizedPayload = {
+    playerId: String(payload.playerId || "").trim(),
+    reason: String(payload.reason || "").trim(),
+    commandName: String(payload.commandName || "").trim(),
+    messageText: String(payload.messageText || "").trim(),
+    mapName: String(payload.mapName || "").trim(),
+    rotationName: String(payload.rotationName || "").trim(),
+  };
+
+  const validationError = definition.validate?.(normalizedPayload) || null;
+  if (validationError) {
+    emitLog("error", validationError);
+    return { ok: false, error: validationError };
+  }
+
+  const command = definition.buildCommand(normalizedPayload);
+  emitLog("info", `执行命令: ${definition.summary(normalizedPayload)}`);
+
+  try {
+    const data = await client.send(command);
+    emitLog("success", `命令执行成功: ${definition.summary(normalizedPayload)}`);
+    if (typeof data === "string" && data.trim()) {
+      emitLog("info", `服务器返回: ${data}`);
+    }
+
+    return { ok: true, data: typeof data === "string" ? data : String(data ?? "") };
+  } catch (error) {
+    const friendlyError = mapCommandError(error);
+    emitLog("error", friendlyError);
     return { ok: false, error: friendlyError };
   }
 }
@@ -220,4 +415,5 @@ module.exports = {
   getConnectionState,
   onLogMessage,
   onConnectionStateChange,
+  runCommand,
 };

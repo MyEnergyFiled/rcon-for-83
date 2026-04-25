@@ -6,22 +6,34 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-packager . \"83 RCON Tool\" --platform=win32 --arch=x64 --out=dist --overwrite --asar",
-    "pack": "electron-builder --dir"
+    "build": "electron-packager . \"83 RCON Tool\" --platform=win32 --arch=x64 --out=dist --overwrite --asar --icon=assets/icon.ico",
+    "pack": "electron-builder --dir",
+    "build:portable": "electron-builder --win portable",
+    "build:installer": "electron-builder --win nsis"
   },
   "build": {
     "appId": "com.codex.rconfor83",
     "productName": "83 RCON Tool",
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         "portable"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
     }
   },
   "devDependencies": {
     "electron": "^31.7.7",
     "electron-builder": "^24.13.3",
-    "electron-packager": "^17.1.2"
+    "electron-packager": "^17.1.2",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5"
   },
   "dependencies": {
     "rcon-client": "^4.2.5"

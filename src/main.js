@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const path = require("node:path");
 
 const {
@@ -7,6 +7,7 @@ const {
   getConnectionState,
   onLogMessage,
   onConnectionStateChange,
+  runCommand,
 } = require("./rconService");
 const { loadConfig, saveConfig } = require("./configStore");
 
@@ -19,11 +20,15 @@ function broadcast(channel, payload) {
 }
 
 function createWindow() {
+  Menu.setApplicationMenu(null);
+  const windowIcon = path.join(__dirname, "..", "assets", "icon.png");
+
   mainWindow = new BrowserWindow({
-    width: 1080,
-    height: 760,
+    width: 1440,
+    height: 920,
     minWidth: 920,
     minHeight: 680,
+    icon: windowIcon,
     backgroundColor: "#11151b",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -46,6 +51,9 @@ app.whenReady().then(() => {
   ipcMain.handle("rcon:get-state", async () => getConnectionState());
   ipcMain.handle("rcon:connect", async (_, config) => connect(config));
   ipcMain.handle("rcon:disconnect", async () => disconnect());
+  ipcMain.handle("rcon:run-command", async (_, commandKey, payload) =>
+    runCommand(commandKey, payload),
+  );
 
   createWindow();
 

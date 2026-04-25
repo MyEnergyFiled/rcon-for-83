@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld("rconApp", {
   getConnectionState: () => ipcRenderer.invoke("rcon:get-state"),
   connect: (config) => ipcRenderer.invoke("rcon:connect", config),
   disconnect: () => ipcRenderer.invoke("rcon:disconnect"),
+  runCommand: (commandKey, payload) =>
+    ipcRenderer.invoke("rcon:run-command", commandKey, payload),
   onLogMessage: (callback) => {
     const handler = (_, payload) => callback(payload);
     ipcRenderer.on("log-message", handler);
