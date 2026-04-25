@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>83 RCON Tool</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="hero-panel">
+        <p class="eyebrow">83 RCON DESKTOP</p>
+        <h1>83 服务器 RCON 管理工具</h1>
+        <p class="hero-copy">
+          先把连接打稳，再逐步补上玩家管理与地图管理。当前版本专注于连接、断开、保存配置和状态日志。
+        </p>
+
+        <div class="status-card" id="status-card" data-status="disconnected">
+          <span class="status-dot"></span>
+          <div>
+            <div class="status-label">连接状态</div>
+            <div class="status-value" id="connection-status">未连接</div>
+          </div>
+        </div>
+
+        <div class="placeholder-group">
+          <h2>后续模块</h2>
+          <ul>
+            <li>服务器管理: 预留分组，暂未实现</li>
+            <li>玩家管理: 玩家列表、踢人、封禁等</li>
+            <li>地图管理: 地图列表、换图、地图池等</li>
+          </ul>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">连接管理</p>
+              <h2>连接到你的 83 RCON 服务器</h2>
+            </div>
+          </div>
+
+          <form id="connection-form" class="connection-form">
+            <label class="field">
+              <span>服务器 IP</span>
+              <input id="host" name="host" type="text" placeholder="例如 5.83.173.248" />
+            </label>
+
+            <label class="field">
+              <span>RCON 端口</span>
+              <input id="port" name="port" type="number" min="1" max="65535" placeholder="例如 10005" />
+            </label>
+
+            <label class="field field-full">
+              <span>RCON 密码</span>
+              <input id="password" name="password" type="password" placeholder="输入你的 RCON 密码" />
+            </label>
+
+            <div class="button-row field-full">
+              <button id="connect-button" type="submit" class="primary-button">
+                连接
+              </button>
+              <button id="disconnect-button" type="button" class="secondary-button">
+                断开
+              </button>
+              <button id="save-button" type="button" class="ghost-button">
+                保存配置
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="grid-panels">
+          <section class="panel placeholder-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">服务器管理</p>
+                <h2>暂未实现</h2>
+              </div>
+            </div>
+            <p>
+              这里将来可以接入 Nitrado 面板能力，例如启动、停止、重启和修改名称。目前首版只做 RCON 连接。
+            </p>
+          </section>
+
+          <section class="panel placeholder-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">玩家管理</p>
+                <h2>暂未实现</h2>
+              </div>
+            </div>
+            <p>下一阶段会加入玩家列表、踢出玩家、封禁/解封等功能。</p>
+          </section>
+
+          <section class="panel placeholder-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">地图管理</p>
+                <h2>暂未实现</h2>
+              </div>
+            </div>
+            <p>下一阶段会加入地图列表、加载地图、下一张地图和设置地图池等功能。</p>
+          </section>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">日志</p>
+              <h2>连接过程与错误信息</h2>
+            </div>
+            <button id="clear-log-button" type="button" class="ghost-button">
+              清空日志
+            </button>
+          </div>
+          <div id="log-list" class="log-list" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

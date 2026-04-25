@@ -1,0 +1,29 @@
+{
+  "name": "rcon-for-83",
+  "version": "0.1.0",
+  "description": "Windows desktop tool for connecting to an 83 RCON server.",
+  "author": "OpenAI Codex",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . \"83 RCON Tool\" --platform=win32 --arch=x64 --out=dist --overwrite --asar",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.codex.rconfor83",
+    "productName": "83 RCON Tool",
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "rcon-client": "^4.2.5"
+  }
+}
